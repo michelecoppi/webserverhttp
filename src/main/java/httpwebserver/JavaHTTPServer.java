@@ -13,22 +13,23 @@ import java.net.Socket;
 import java.util.Date;
 import java.util.StringTokenizer;
 
-// The tutorial can be found just here on the SSaurel's Blog : 
-// https://www.ssaurel.com/blog/create-a-simple-http-web-server-in-java
-// Each Client Connection will be managed in a dedicated Thread
+
 public class JavaHTTPServer implements Runnable{ 
 	
 	static final File WEB_ROOT = new File(".");
+	//file che invia di default 
 	static final String DEFAULT_FILE = "index.html";
+	//quando non trova il file
 	static final String FILE_NOT_FOUND = "404.html";
+	//quando il metodo non è supportato 
 	static final String METHOD_NOT_SUPPORTED = "not_supported.html";
-	// port to listen connection
+	// porta in ascolto
 	static final int PORT = 8080;
 	
-	// verbose mode
+	// dettagli aggiuntivi su che cosa sta facendo il programma
 	static final boolean verbose = true;
 	
-	// Client Connection via Socket Class
+	// Socket per la connessione 
 	private Socket connect;
 	
 	public JavaHTTPServer(Socket c) {
@@ -40,7 +41,7 @@ public class JavaHTTPServer implements Runnable{
 			ServerSocket serverConnect = new ServerSocket(PORT);
 			System.out.println("Server started.\nListening for connections on port : " + PORT + " ...\n");
 			
-			// we listen until user halts server execution
+			// loop infinito per rimanere in ascolto
 			while (true) {
 				JavaHTTPServer myServer = new JavaHTTPServer(serverConnect.accept());
 				
@@ -48,7 +49,7 @@ public class JavaHTTPServer implements Runnable{
 					System.out.println("Connecton opened. (" + new Date() + ")");
 				}
 				
-				// create dedicated thread to manage the client connection
+				// thread per gestire la connessione del client
 				Thread thread = new Thread(myServer);
 				thread.start();
 			}
@@ -60,53 +61,53 @@ public class JavaHTTPServer implements Runnable{
 
 	@Override
 	public void run() {
-		// we manage our particular client connection
+		// gestione del cient 
 		BufferedReader in = null; PrintWriter out = null; BufferedOutputStream dataOut = null;
 		String fileRequested = null;
 		
 		try {
-			// we read characters from the client via input stream on the socket
+			// input dal client
 			in = new BufferedReader(new InputStreamReader(connect.getInputStream()));
-			// we get character output stream to client (for headers)
+			// output al client dell'header 
 			out = new PrintWriter(connect.getOutputStream());
-			// get binary output stream to client (for requested data)
+			// output al client dei dati richiesti
 			dataOut = new BufferedOutputStream(connect.getOutputStream());
 			
-			// get first line of the request from the client
+			// otteniamo la prima riga della risposta del cient
 			String input = in.readLine();
-			// we parse the request with a string tokenizer
+			// analizziamo la richiesta con un tokenizer
 			StringTokenizer parse = new StringTokenizer(input);
-			String method = parse.nextToken().toUpperCase(); // we get the HTTP method of the client
-			// we get file requested
+			String method = parse.nextToken().toUpperCase(); // otteniamo il metodo HTTP dal client 
+			// ottieniamo file richiesto
 			fileRequested = parse.nextToken().toLowerCase();
 			
-			// we support only GET and HEAD methods, we check
+			// supportati solo i metodi get e post
 			if (!method.equals("GET")  &&  !method.equals("HEAD")) {
 				if (verbose) {
 					System.out.println("501 Not Implemented : " + method + " method.");
 				}
 				
-				// we return the not supported file to the client
+				// ritorniamo il file non supportato al client
 				File file = new File(WEB_ROOT, METHOD_NOT_SUPPORTED);
 				int fileLength = (int) file.length();
 				String contentMimeType = "text/html";
 				//read content to return to client
 				byte[] fileData = readFileData(file, fileLength);
 					
-				// we send HTTP Headers with data to client
+				// Mandiamo HTTP Headers con data al client
 				out.println("HTTP/1.1 501 Not Implemented");
 				out.println("Server: Java HTTP Server from SSaurel : 1.0");
 				out.println("Date: " + new Date());
 				out.println("Content-type: " + contentMimeType);
 				out.println("Content-length: " + fileLength);
-				out.println(); // blank line between headers and content, very important !
-				out.flush(); // flush character output stream buffer
-				// file
+				out.println(); // linea bianca per dividere
+				out.flush(); //svuota il buffer
+				
 				dataOut.write(fileData, 0, fileLength);
 				dataOut.flush();
 				
 			} else {
-				// GET or HEAD method
+				
 				if (fileRequested.endsWith("/")) {
 					fileRequested += DEFAULT_FILE;
 				}
@@ -115,17 +116,17 @@ public class JavaHTTPServer implements Runnable{
 				int fileLength = (int) file.length();
 				String content = getContentType(fileRequested);
 				
-				if (method.equals("GET")) { // GET method so we return content
+				if (method.equals("GET")) { // ritorniamo il contenuto del metodo get
 					byte[] fileData = readFileData(file, fileLength);
 					
-					// send HTTP Headers
+					// manda HTTP Headers
 					out.println("HTTP/1.1 200 OK");
 					out.println("Server: Java HTTP Server from SSaurel : 1.0");
 					out.println("Date: " + new Date());
 					out.println("Content-type: " + content);
 					out.println("Content-length: " + fileLength);
-					out.println(); // blank line between headers and content, very important !
-					out.flush(); // flush character output stream buffer
+					out.println(); // linea bianca per dividere
+					out.flush(); //svuota il buffer 
 					
 					dataOut.write(fileData, 0, fileLength);
 					dataOut.flush();
@@ -151,7 +152,7 @@ public class JavaHTTPServer implements Runnable{
 				in.close();
 				out.close();
 				dataOut.close();
-				connect.close(); // we close socket connection
+				connect.close(); // chiusura socket
 			} catch (Exception e) {
 				System.err.println("Error closing stream : " + e.getMessage());
 			} 
@@ -179,7 +180,7 @@ public class JavaHTTPServer implements Runnable{
 		return fileData;
 	}
 	
-	// return supported MIME Types
+	// ritorna tipi di MIME supportati
 	private String getContentType(String fileRequested) {
 		if (fileRequested.endsWith(".htm")  ||  fileRequested.endsWith(".html"))
 			return "text/html";
@@ -193,13 +194,14 @@ public class JavaHTTPServer implements Runnable{
 		String content = "text/html";
 		byte[] fileData = readFileData(file, fileLength);
 		
+		// ritorna questo quando non vinene trovato il file 
 		out.println("HTTP/1.1 404 File Not Found");
 		out.println("Server: Java HTTP Server from SSaurel : 1.0");
 		out.println("Date: " + new Date());
 		out.println("Content-type: " + content);
 		out.println("Content-length: " + fileLength);
-		out.println(); // blank line between headers and content, very important !
-		out.flush(); // flush character output stream buffer
+		out.println(); // linea bianca per dividere 
+		out.flush(); //svuota il buffer
 		
 		dataOut.write(fileData, 0, fileLength);
 		dataOut.flush();
