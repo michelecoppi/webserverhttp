@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
 
 public class JavaHTTPServer implements Runnable{ 
 	
-	static final File WEB_ROOT = new File(".");
+	static final File WEB_ROOT = new File("./src/main/resources");
 	//file che invia di default 
 	static final String DEFAULT_FILE = "index.html";
 	//quando non trova il file
