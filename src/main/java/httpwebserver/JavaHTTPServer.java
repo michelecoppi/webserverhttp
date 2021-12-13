@@ -25,6 +25,7 @@ public class JavaHTTPServer implements Runnable{
 	static final String METHOD_NOT_SUPPORTED = "not_supported.html";
 	// porta in ascolto
 	static final int PORT = 8080;
+	private int statuscode;
 	
 	// dettagli aggiuntivi su che cosa sta facendo il programma
 	static final boolean verbose = true;
@@ -110,6 +111,12 @@ public class JavaHTTPServer implements Runnable{
 				
 				if (fileRequested.endsWith("/")) {
 					fileRequested += DEFAULT_FILE;
+					statuscode=200;
+				} else{
+                    File file = new File(WEB_ROOT,fileRequested);
+					if(!file.isFile()){
+					statuscode=301;
+					}
 				}
 				
 				File file = new File(WEB_ROOT, fileRequested);
@@ -118,7 +125,7 @@ public class JavaHTTPServer implements Runnable{
 				
 				if (method.equals("GET")) { // ritorniamo il contenuto del metodo get
 					byte[] fileData = readFileData(file, fileLength);
-					
+					if(statuscode==200){
 					// manda HTTP Headers
 					out.println("HTTP/1.1 200 OK");
 					out.println("Server: Java HTTP Server from SSaurel : 1.0");
@@ -130,6 +137,16 @@ public class JavaHTTPServer implements Runnable{
 					
 					dataOut.write(fileData, 0, fileLength);
 					dataOut.flush();
+					} else if(statuscode==301){
+						out.println("HTTP/1.1 301 OK");
+					out.println("Server: Java HTTP Server from SSaurel : 1.0");
+					out.println("Location: "+fileRequested+"/");
+					out.println("Date: " + new Date());
+					out.println("Content-type: " + content);
+					out.println("Content-length: " + fileLength);
+					out.println(); // linea bianca per dividere
+					out.flush(); //svuota il buffer 
+					}
 				}
 				
 				if (verbose) {
