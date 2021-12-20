@@ -95,58 +95,62 @@ public class JavaHTTPServer implements Runnable{
 				//read content to return to client
 				byte[] fileData = readFileData(file, fileLength);
 					
-				// Mandiamo HTTP Headers con data al client
-				out.println("HTTP/1.1 501 Not Implemented");
-				out.println("Server: Java HTTP Server from SSaurel : 1.0");
-				out.println("Date: " + new Date());
-				out.println("Content-type: " + contentMimeType);
-				out.println("Content-length: " + fileLength);
-				out.println(); // linea bianca per dividere
-				out.flush(); //svuota il buffer
-				
-				dataOut.write(fileData, 0, fileLength);
-				dataOut.flush();
+				statuscode=501;
+				MandaFile(out, dataOut, file, fileLength, contentMimeType, statuscode);
 				
 			} else {
-				
-				if (fileRequested.endsWith("/")) {
+				if(fileRequested.endsWith("/")){
 					fileRequested += DEFAULT_FILE;
-					statuscode=200;
-				} else{
-                    File file = new File(WEB_ROOT,fileRequested);
-					if(!file.isFile()){
-					statuscode=301;
+					File file = new File(WEB_ROOT, fileRequested);
+					if(file.isFile()){
+						statuscode=200;
+						int fileLength = (int) file.length();
+						String content = getContentType(fileRequested);
+						
+						if (method.equals("GET")) { // GET method so we return content
+							MandaFile(out, dataOut, file, fileLength, content, statuscode);
+						}
+						if (verbose) {
+							System.out.println("File " + fileRequested + " of type " + content + " returned");
+						}
+						
+					}else{
+						statuscode = 404;
+						File fileErr = new File(WEB_ROOT, FILE_NOT_FOUND);
+						int fileLength = (int) file.length();
+						String content = getContentType(fileRequested);
+
+						MandaFile(out, dataOut, fileErr, fileLength, content, statuscode);
+					}
+				} else {
+					File file = new File(WEB_ROOT, fileRequested);
+					if(file.isFile()){
+						statuscode=200;
+						int fileLength = (int) file.length();
+						String content = getContentType(fileRequested);
+						
+						if (method.equals("GET")) { // GET method so we return content
+							MandaFile(out, dataOut, file, fileLength, content, statuscode);
+						}
+						if (verbose) {
+							System.out.println("File " + fileRequested + " of type " + content + " returned");
+						}
+						
+					}else{
+						statuscode = 301;
+						fileRequested+="/";
+						out.println("HTTP/1.1 " + statuscode + " Location Changed");
+						out.println("Location " + fileRequested);
+						out.flush();
 					}
 				}
-				
+
 				File file = new File(WEB_ROOT, fileRequested);
+				statuscode=200;
 				int fileLength = (int) file.length();
 				String content = getContentType(fileRequested);
-				
-				if (method.equals("GET")) { // ritorniamo il contenuto del metodo get
-					byte[] fileData = readFileData(file, fileLength);
-					if(statuscode==200){
-					// manda HTTP Headers
-					out.println("HTTP/1.1 200 OK");
-					out.println("Server: Java HTTP Server from SSaurel : 1.0");
-					out.println("Date: " + new Date());
-					out.println("Content-type: " + content);
-					out.println("Content-length: " + fileLength);
-					out.println(); // linea bianca per dividere
-					out.flush(); //svuota il buffer 
-					
-					dataOut.write(fileData, 0, fileLength);
-					dataOut.flush();
-					} else if(statuscode==301){
-						out.println("HTTP/1.1 301 OK");
-					out.println("Server: Java HTTP Server from SSaurel : 1.0");
-					out.println("Location: "+fileRequested+"/");
-					out.println("Date: " + new Date());
-					out.println("Content-type: " + content);
-					out.println("Content-length: " + fileLength);
-					out.println(); // linea bianca per dividere
-					out.flush(); //svuota il buffer 
-					}
+				if (method.equals("GET")) { // GET method so we return content
+					MandaFile(out, dataOut, file, fileLength, content, statuscode);
 				}
 				
 				if (verbose) {
@@ -210,22 +214,37 @@ public class JavaHTTPServer implements Runnable{
 		int fileLength = (int) file.length();
 		String content = "text/html";
 		byte[] fileData = readFileData(file, fileLength);
-		
-		// ritorna questo quando non vinene trovato il file 
-		out.println("HTTP/1.1 404 File Not Found");
-		out.println("Server: Java HTTP Server from SSaurel : 1.0");
-		out.println("Date: " + new Date());
-		out.println("Content-type: " + content);
-		out.println("Content-length: " + fileLength);
-		out.println(); // linea bianca per dividere 
-		out.flush(); //svuota il buffer
-		
-		dataOut.write(fileData, 0, fileLength);
-		dataOut.flush();
-		
+		statuscode=404;
+	    try{
+			MandaFile(out, dataOut, file, fileLength, content, statuscode);
+		}catch(IOException ioe){
+			System.err.println("Error with file not found exception : " + ioe.getMessage());
+		}
 		if (verbose) {
 			System.out.println("File " + fileRequested + " not found");
 		}
 	}
 	
+     
+	private void MandaFile(PrintWriter out, OutputStream dataOut, File file, int fileLength, String content, int code) throws IOException{
+		byte[] fileData = readFileData(file, fileLength);
+		if(code == 404){
+			out.println("HTTP/1.1 " + code + " File non trovato");
+		}else if(code==501){
+			out.println("HTTP/1.1 " + code + "  Non implementato");
+		} else if(code==200){
+			out.println("HTTP/1.1 " + code + "  OK");
+		}
+		out.println("Server: Java HTTP Server from SSaurel : 1.0");
+		out.println("Date: " + new Date());
+		out.println("Content-type: " + content);
+		out.println("Content-length: " + fileLength);
+		out.println(); 
+		out.flush(); 
+		
+		dataOut.write(fileData, 0, fileLength);
+		dataOut.flush();
+	}
+
+
 }
