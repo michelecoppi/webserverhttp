@@ -218,7 +218,11 @@ public class JavaHTTPServer implements Runnable {
 			return "text/css";
 		} else if (fileRequested.endsWith(".ico")) {
 			return "image/vnd.microsoft.icon";
-		} else
+		} else if (fileRequested.endsWith(".json")) {
+			return "application/json";
+		}  else if (fileRequested.endsWith(".xml")) {
+			return "application/xml";
+		}else
 			return "text/plain";
 	}
 
