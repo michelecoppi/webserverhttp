@@ -273,7 +273,7 @@ public class JavaHTTPServer implements Runnable {
 	}
 
 	private root XmlDeserializer() throws JsonParseException, JsonMappingException, IOException{
-		File file = new File("src/main/resources/classe.xml"); //indico il percorso del file da deserializzare
+		File file = new File("src/main/resources/classe.xml"); 
         XmlMapper xmlMapper = new XmlMapper();
         root value = xmlMapper.readValue(file, root.class);
 		return value;
@@ -282,7 +282,7 @@ public class JavaHTTPServer implements Runnable {
 
 	private void JSONSerializer(root value) throws JsonParseException, JsonMappingException, IOException{
 		ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.enable(SerializationFeature.INDENT_OUTPUT); //Stampo le stringhe una sotto l'altra
+		objectMapper.enable(SerializationFeature.INDENT_OUTPUT); 
 		objectMapper.writeValue(new File("src/main/resources/classe.json"), value);
 		
 
