@@ -13,6 +13,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.Date;
 import java.util.StringTokenizer;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 public class JavaHTTPServer implements Runnable {
 
@@ -32,8 +37,19 @@ public class JavaHTTPServer implements Runnable {
 	// Socket per la connessione
 	private Socket connect;
 
+
+
 	public JavaHTTPServer(Socket c) {
 		connect = c;
+		
+	}
+
+	public File getWebRoot(){
+		return WEB_ROOT;
+	}
+
+	public String getMethodnotSupp(){
+		return METHOD_NOT_SUPPORTED;
 	}
 
 	public static void main(String[] args) {
@@ -128,6 +144,13 @@ public class JavaHTTPServer implements Runnable {
 
 					giaFatto = true;
 				}
+                if(fileRequested.endsWith(".json/")){
+					root value = XmlDeserializer();
+					JSONSerializer(value);
+				}
+				if(fileRequested.endsWith(".xml/")){
+				
+				}
 
 				File file = new File(WEB_ROOT, fileRequested);
 				int fileLength = (int) file.length();
@@ -188,7 +211,8 @@ public class JavaHTTPServer implements Runnable {
 	private byte[] readFileData(File file, int fileLength) throws IOException {
 		FileInputStream fileIn = null;
 		byte[] fileData = new byte[fileLength];
-
+       
+        
 		try {
 			fileIn = new FileInputStream(file);
 			fileIn.read(fileData);
@@ -247,5 +271,23 @@ public class JavaHTTPServer implements Runnable {
 			System.out.println("File " + fileRequested + " not found");
 		}
 	}
+
+	private root XmlDeserializer() throws JsonParseException, JsonMappingException, IOException{
+		File file = new File("src/main/resources/classe.xml"); //indico il percorso del file da deserializzare
+        XmlMapper xmlMapper = new XmlMapper();
+        root value = xmlMapper.readValue(file, root.class);
+		return value;
+
+	}
+
+	private void JSONSerializer(root value) throws JsonParseException, JsonMappingException, IOException{
+		ObjectMapper objectMapper = new ObjectMapper();
+		objectMapper.enable(SerializationFeature.INDENT_OUTPUT); //Stampo le stringhe una sotto l'altra
+		objectMapper.writeValue(new File("src/main/resources/classe.json"), value);
+		
+
+		
+	}
+	
 
 }
